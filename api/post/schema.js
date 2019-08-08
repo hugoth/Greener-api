@@ -7,16 +7,16 @@ const PostSchema = new mongoose.Schema({
   description: { type: String, required: true },
   imgUrl: { type: String },
   tags: { type: Array },
-  upVotes: { type: Number },
-  likes: { type: Number },
+  likes: { type: Number, default: 0, required: true },
+  visits: { type: Number, default: 0, required: true },
   comments: { type: mongoose.Schema.Types.ObjectId, ref: "Comment" },
   date: { type: Number, required: true },
   published: { type: Boolean, default: false },
   types: { type: Number }
 });
 
-// UserSchema.index({
-//   name: "text"
-// });
+PostSchema.index({
+  likes: "number"
+});
 
 module.exports = PostSchema;

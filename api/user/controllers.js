@@ -36,10 +36,53 @@ async function signUp(req, res) {
         hash
       });
       await newUser.save();
-      res.status(200).json({ message: "User sign up", newUser });
+      const user = {
+        id: newUser._id,
+        email: newUser.email,
+        name: newUser.name
+      };
+
+      res.status(200).json({ message: "User sign up", user });
     } catch (err) {
       res.status(400).json({ error: err.message });
     }
+  }
+}
+
+async function signUpGoogle(req, res) {
+  try {
+    const email = req.body.email;
+    const existingUser = await User.findOne({ email: email });
+
+    if (existingUser) {
+      const user = {
+        email: existingUser.email,
+        name: existingUser.name,
+        profile_pic: existingUser.profile_pic,
+        idGoogle: existingUser.idGoogle,
+        id: existingUser._id
+      };
+      res.status(200).json(user);
+    } else {
+      const { email, name, profile_pic, idGoogle } = req.body;
+      const first_name = name.first_name;
+      const last_name = name.last_name;
+
+      const user = new User({
+        email,
+        name: {
+          first_name,
+          last_name
+        },
+        profile_pic,
+        idGoogle
+      });
+      await newUser.save();
+
+      res.status(200).json({ message: "User Google sign up", user });
+    }
+  } catch (err) {
+    res.status(400).json({ error: err.message });
   }
 }
 
@@ -53,10 +96,7 @@ async function logIn(req, res) {
 
     const user = {
       name: searchUser.name,
-      token: searchUser.token,
       id: searchUser._id,
-      posts: searchUser.posts,
-      likes: searchUser.likes,
       email: searchUser.email
     };
     if (
@@ -71,5 +111,37 @@ async function logIn(req, res) {
   }
 }
 
+async function addFollower(req, res) {
+  try {
+    const { userFollowedId, userFollowerId } = req.body;
+    const userFollowed = await User.find(userFollowedId);
+    const userSubscriber = await User.findById(userSubscriberId);
+
+    userFollowed.followers.push(userFollowerId);
+    userSubscriber.subscription.push(userFollowedId);
+
+    await userFollowed.save();
+    await userSubscriber.save();
+    res.status(200).json({ message: "susbcription success" });
+  } catch (error) {
+    res.status(600).json({ error: error.message });
+  }
+}
+
+async function getPostUsers(req, res) {
+  console.log(req.params);
+
+  try {
+    const user = await User.findById(req.params.id).populate("posts");
+    const posts = user.posts;
+    res.status(200).json(posts);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+}
+
 module.exports.signUp = signUp;
+module.exports.signUpGoogle = signUpGoogle;
 module.exports.logIn = logIn;
+module.exports.addFollower = addFollower;
+module.exports.getPostsUser = getPostUsers;
