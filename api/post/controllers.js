@@ -1,16 +1,27 @@
 const Post = require("./model"); // call post Model
 const User = require("../user/model");
+const Tag = require("../tag/model");
+
+const controllers = require("../tag/controllers");
 
 // CODE :
 // 605 : missing parameter on create Post
 
 async function createPost(req, res) {
+  console.log(req.body.user);
+
   try {
-    const { title, user, description, content, imgUrl } = req.body;
-    if (!title || !user || !content) {
+    const { title, user, description, content, imgUrl, tags } = req.body;
+    if ((!title || !user || !content, !tags)) {
       res.status(605).json({ message: "Parameter missing" });
     }
+
+    const tagsFiltered = await controllers.createTag(tags);
+    console.log("filteredTags", tagsFiltered);
+
     const SearchUser = await User.findById(user);
+    console.log("user", SearchUser);
+
     const date = Date.now();
     const newPost = new Post({
       title,
@@ -18,7 +29,8 @@ async function createPost(req, res) {
       content,
       description,
       imgUrl,
-      date
+      date,
+      tags: tagsFiltered
     });
 
     SearchUser.posts.push(newPost._id);
