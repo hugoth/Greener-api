@@ -8,8 +8,6 @@ const controllers = require("../tag/controllers");
 // 605 : missing parameter on create Post
 
 async function createPost(req, res) {
-  console.log(req.body.user);
-
   try {
     const { title, user, description, content, imgUrl, tags } = req.body;
     if ((!title || !user || !content, !tags)) {
@@ -17,15 +15,12 @@ async function createPost(req, res) {
     }
 
     const tagsFiltered = await controllers.createTag(tags);
-    console.log("filteredTags", tagsFiltered);
-
     const SearchUser = await User.findById(user);
-    console.log("user", SearchUser);
 
     const date = Date.now();
     const newPost = new Post({
       title,
-      user,
+      user: SearchUser,
       content,
       description,
       imgUrl,
@@ -33,20 +28,23 @@ async function createPost(req, res) {
       tags: tagsFiltered
     });
 
-    SearchUser.posts.push(newPost._id);
+    console.log("newPost", newPost);
+
+    await controllers.updatePostTags(newPost);
+    await SearchUser.posts.push(newPost._id);
     await SearchUser.save();
     await newPost.save();
 
     res.status(200).json({ message: "Post created", newPost });
   } catch (err) {
     res.status(400).json({ err: err.message });
-    console.log(err.message);
+    console.log("err", err.message);
   }
 }
 
 async function getPosts(_, res) {
   try {
-    const posts = await Post.find().populate("user");
+    const posts = await Post.find();
     posts.reverse();
     res.status(200).json(posts);
   } catch (err) {
@@ -56,10 +54,7 @@ async function getPosts(_, res) {
 
 async function getPostPopular(_, res) {
   try {
-    const posts = await Post.find()
-      .sort({ likes: -1 })
-      .populate("user");
-
+    const posts = await Post.find().sort({ likes: -1 });
     const popularPosts = posts.slice(0, 3);
     res.json(popularPosts);
   } catch (err) {
@@ -70,9 +65,12 @@ async function getPostPopular(_, res) {
 
 async function getPost(req, res) {
   try {
-    const post = await Post.findById(req.params.id).populate("user");
+    const post = await Post.findById(req.params.id);
+    console.log(post.tags);
+    await controllers.updateTags(post.tags); // update tags, incremement number of visists
     post.visits += 1;
     await post.save();
+
     res.status(200).json(post);
   } catch (err) {
     res.status(400).json({ error: err.message });

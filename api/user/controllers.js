@@ -50,6 +50,8 @@ async function signUp(req, res) {
 }
 
 async function signUpGoogle(req, res) {
+  console.log(req.body);
+
   try {
     const email = req.body.email;
     const existingUser = await User.findOne({ email: email });
@@ -77,11 +79,12 @@ async function signUpGoogle(req, res) {
         profile_pic,
         idGoogle
       });
-      await newUser.save();
+      await user.save();
 
       res.status(200).json({ message: "User Google sign up", user });
     }
   } catch (err) {
+    console.log(err.message);
     res.status(400).json({ error: err.message });
   }
 }

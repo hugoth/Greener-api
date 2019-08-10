@@ -36,13 +36,32 @@ async function createTag(tags) {
   }
 }
 
-async function updateTags(tags) {
+async function updatePostTags(post) {
+  // insert posts in tags when created
+  const tags = post.tags;
   try {
-    for (let tag of tags) {
-      const updateTag = await Tag.findOne({ title: tag.label });
-      updateTag.numberOfPosts += 1;
-      await updateTag.save();
-    }
+    await Promise.all(
+      tags.map(async tag => {
+        const updateTag = await Tag.findById(tag._id);
+        updateTag.posts.push(post);
+        await updateTag.save();
+      })
+    );
+  } catch (err) {
+    return err;
+  }
+}
+
+async function updateTags(tags) {
+  // increment visits
+  try {
+    await Promise.all(
+      tags.map(async tag => {
+        const updateTag = await Tag.findOne({ title: tag.label });
+        updateTag.numberOfVisits += 1;
+        await updateTag.save();
+      })
+    );
   } catch (err) {
     return err;
   }
@@ -59,9 +78,9 @@ async function getTags(_, res) {
 
 async function getTag(req, res) {
   try {
-    const searchTag = req.params.search;
-    const tag = await Tag.find({ $query: { title: searchTag } });
-    if (Boolean(tag).length) {
+    const tag = await Tag.findById(req.params.id);
+
+    if (tag) {
       res.status(200).json(tag);
     }
     res.status(404).json({ message: "Tag not Found" });
@@ -85,4 +104,5 @@ module.exports.createTag = createTag;
 module.exports.getTags = getTags;
 module.exports.getTag = getTag;
 module.exports.updateTags = updateTags;
+module.exports.updatePostTags = updatePostTags;
 module.exports.getTagPopular = getTagPopular;
