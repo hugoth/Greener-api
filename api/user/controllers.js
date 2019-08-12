@@ -50,8 +50,6 @@ async function signUp(req, res) {
 }
 
 async function signUpGoogle(req, res) {
-  console.log(req.body);
-
   try {
     const email = req.body.email;
     const existingUser = await User.findOne({ email: email });
@@ -132,8 +130,6 @@ async function addFollower(req, res) {
 }
 
 async function getPostUsers(req, res) {
-  console.log(req.params);
-
   try {
     const user = await User.findById(req.params.id).populate("posts");
     const posts = user.posts;

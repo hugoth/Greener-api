@@ -8,9 +8,11 @@ const controllers = require("../tag/controllers");
 // 605 : missing parameter on create Post
 
 async function createPost(req, res) {
+  console.log("body", req.body.data);
+
   try {
-    const { title, user, description, content, imgUrl, tags } = req.body;
-    if ((!title || !user || !content, !tags)) {
+    const { title, user, description, content, imgUrl, tags } = req.body.data;
+    if ((!title || !user || !description || !content, !tags)) {
       res.status(605).json({ message: "Parameter missing" });
     }
 
@@ -28,9 +30,9 @@ async function createPost(req, res) {
       tags: tagsFiltered
     });
 
-    console.log("newPost", newPost);
+    // console.log("newPost", newPost);
 
-    await controllers.updatePostTags(newPost);
+    await controllers.updatePostTags(newPost.tags);
     await SearchUser.posts.push(newPost._id);
     await SearchUser.save();
     await newPost.save();

@@ -36,9 +36,11 @@ async function createTag(tags) {
   }
 }
 
-async function updatePostTags(post) {
+async function updatePostTags(tags) {
+  console.log("receive tags", tags);
+
   // insert posts in tags when created
-  const tags = post.tags;
+
   try {
     await Promise.all(
       tags.map(async tag => {
