@@ -8,6 +8,6 @@ router.post("/post/add/like/:id/", controller.addLikePost);
 router.get("/post/all", controller.getPosts);
 router.get("/post/popular", controller.getPostPopular);
 router.get("/post/:id", controller.getPost);
-router.get("/post/similar/:id", controller.getSimilarPost);
+// router.get("/post/similar/:id", controller.getSimilarPost);
 
 module.exports = router;

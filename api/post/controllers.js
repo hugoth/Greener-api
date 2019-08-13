@@ -66,34 +66,31 @@ async function getPostPopular(_, res) {
 }
 
 async function getPost(req, res) {
-  try {
-    const post = await Post.findById(req.params.id);
-    await controllers.updateTags(post.tags); // update tags, incremement number of visists
-    post.visits += 1;
-    await post.save();
-
-    res.status(200).json(post);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-}
-
-async function addLikePost(req, res) {
-  try {
-    const post = await Post.findById(req.params.id);
-    post.likes += 1;
-    await post.save();
-    res.status(200).json(post);
-  } catch (error) {
-    res.status(400).json({ error: err.message });
-  }
-}
-
-async function getSimilarPost(req, res) {
   console.log(req.params);
 
   try {
-    const originalPost = await Post.findById(req.params.id);
+    const post = await Post.findById(req.params.id);
+    const similarPosts = await getSimilarPost(post._id); // searching similar posts
+    await controllers.updateTags(post.tags); // update tags, incremement number of visists
+    post.visits += 1;
+    await post.save();
+    post["similarPosts"] = similarPosts;
+
+    const newObj = {
+      data: post,
+      similarPosts
+    };
+
+    res.status(200).json(newObj);
+  } catch (err) {
+    console.log(err.message);
+    res.status(400).json({ error: err.message });
+  }
+}
+
+async function getSimilarPost(postID) {
+  try {
+    const originalPost = await Post.findById(postID);
     const posts = [];
     let similarPosts = [];
 
@@ -108,7 +105,7 @@ async function getSimilarPost(req, res) {
           posts.push(post);
         });
         similarPosts = posts.filter(post => {
-          return post._id != req.params.id;
+          return post._id != postID;
         });
       })
     );
@@ -116,10 +113,20 @@ async function getSimilarPost(req, res) {
     if (!similarPosts) {
       res.status(400).json({ message: "not found" });
     }
-    res.json(similarPosts);
+    return similarPosts.slice(0, 3);
   } catch (err) {
     console.log(err.message);
+    res.status(400).json({ error: err.message });
+  }
+}
 
+async function addLikePost(req, res) {
+  try {
+    const post = await Post.findById(req.params.id);
+    post.likes += 1;
+    await post.save();
+    res.status(200).json(post);
+  } catch (error) {
     res.status(400).json({ error: err.message });
   }
 }
