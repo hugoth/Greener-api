@@ -8,8 +8,6 @@ const controllers = require("../tag/controllers");
 // 605 : missing parameter on create Post
 
 async function createPost(req, res) {
-  console.log("body", req.body.data);
-
   try {
     const { title, user, description, content, imgUrl, tags } = req.body.data;
     if ((!title || !user || !description || !content, !tags)) {
@@ -17,6 +15,7 @@ async function createPost(req, res) {
     }
 
     const tagsFiltered = await controllers.createTag(tags);
+    console.log("tagsfiltered", tagsFiltered);
     const SearchUser = await User.findById(user);
 
     const date = Date.now();
@@ -30,9 +29,10 @@ async function createPost(req, res) {
       tags: tagsFiltered
     });
 
-    // console.log("newPost", newPost);
-
-    await controllers.updatePostTags(newPost.tags);
+    const updateTag = await controllers.updatePostTags(newPost.tags, newPost);
+    if (!updateTag) {
+      res.status(401).json({ message: "saving tags not working" });
+    }
     await SearchUser.posts.push(newPost._id);
     await SearchUser.save();
     await newPost.save();
@@ -46,7 +46,7 @@ async function createPost(req, res) {
 
 async function getPosts(_, res) {
   try {
-    const posts = await Post.find();
+    const posts = await Post.find().populate("tags");
     posts.reverse();
     res.status(200).json(posts);
   } catch (err) {
@@ -68,7 +68,6 @@ async function getPostPopular(_, res) {
 async function getPost(req, res) {
   try {
     const post = await Post.findById(req.params.id);
-    console.log(post.tags);
     await controllers.updateTags(post.tags); // update tags, incremement number of visists
     post.visits += 1;
     await post.save();
@@ -90,8 +89,44 @@ async function addLikePost(req, res) {
   }
 }
 
+async function getSimilarPost(req, res) {
+  console.log(req.params);
+
+  try {
+    const originalPost = await Post.findById(req.params.id);
+    const posts = [];
+    let similarPosts = [];
+
+    await Promise.all(
+      originalPost.tags.map(async tag => {
+        const searchTag = await Tag.findById(tag._id).populate({
+          path: "posts",
+          model: "Post"
+        });
+
+        searchTag.posts.map(post => {
+          posts.push(post);
+        });
+        similarPosts = posts.filter(post => {
+          return post._id != req.params.id;
+        });
+      })
+    );
+
+    if (!similarPosts) {
+      res.status(400).json({ message: "not found" });
+    }
+    res.json(similarPosts);
+  } catch (err) {
+    console.log(err.message);
+
+    res.status(400).json({ error: err.message });
+  }
+}
+
 module.exports.createPost = createPost;
 module.exports.getPosts = getPosts;
 module.exports.getPostPopular = getPostPopular;
 module.exports.getPost = getPost;
 module.exports.addLikePost = addLikePost;
+module.exports.getSimilarPost = getSimilarPost;

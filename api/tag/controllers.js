@@ -20,13 +20,13 @@ async function createTag(tags) {
           searchTag = await Tag.findById(tag.id);
           searchTag.numberOfPosts += 1;
           await searchTag.save();
-          returnedTags.push(searchTag);
+          returnedTags.push(searchTag._id);
         } else {
           const newTag = new Tag({
             label: title
           });
           await newTag.save();
-          returnedTags.push(newTag);
+          returnedTags.push(newTag._id);
         }
       })
     );
@@ -36,20 +36,24 @@ async function createTag(tags) {
   }
 }
 
-async function updatePostTags(tags) {
-  console.log("receive tags", tags);
-
+async function updatePostTags(tags, post) {
   // insert posts in tags when created
+  // console.log("yolo", tags, post);
+
+  console.log(tags, post);
 
   try {
     await Promise.all(
       tags.map(async tag => {
         const updateTag = await Tag.findById(tag._id);
-        updateTag.posts.push(post);
+        updateTag.posts.push(post._id);
         await updateTag.save();
+        return updateTag;
       })
     );
   } catch (err) {
+    console.log(err.message);
+
     return err;
   }
 }
@@ -79,13 +83,18 @@ async function getTags(_, res) {
 }
 
 async function getTag(req, res) {
+  console.log("get tag", req.params);
+
   try {
-    const tag = await Tag.findById(req.params.id);
+    const tag = await Tag.findById(req.params.id).populate({
+      path: "posts",
+      model: "Post"
+    });
 
     if (tag) {
       res.status(200).json(tag);
     }
-    res.status(404).json({ message: "Tag not Found" });
+    res.status(404).json({ message: "not Found" });
   } catch (err) {
     res.status(400).json({ err: err.message });
   }

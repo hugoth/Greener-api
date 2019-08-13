@@ -6,7 +6,7 @@ const PostSchema = new mongoose.Schema({
   content: { type: String, required: true },
   description: { type: String, required: true },
   imgUrl: { type: String },
-  tags: { type: Array },
+  tags: [{ type: mongoose.Schema.Types.ObjectId, ref: "Tag" }],
   likes: { type: Number, default: 0, required: true },
   visits: { type: Number, default: 0, required: true },
   comments: { type: mongoose.Schema.Types.ObjectId, ref: "Comment" },
